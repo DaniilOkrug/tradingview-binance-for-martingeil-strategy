@@ -175,7 +175,7 @@ binance.websockets.userFutureData(
         updateInfo.order.originalQuantity === orders[pair].order.origQty &&
         ((updateInfo.order.side === "SELL" &&
           orders[pair].order.positionSide === "LONG") ||
-          (updateInfo.order.side === "SELL" &&
+          (updateInfo.order.side === "BUY" &&
             orders[pair].positionSide === "SHORT"))
       ) {
         console.log("close all");
