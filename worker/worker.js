@@ -122,7 +122,7 @@ binance.websockets.userFutureData(
           ])
         )[0];
 
-        // orders[pair].sl.orderId = newSlResponse.order.orderId
+        orders[pair].sl.orderId = newSlResponse.orderId
 
         console.log("new sl", newSlResponse);
         return;
@@ -136,6 +136,8 @@ binance.websockets.userFutureData(
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].sl.orderId,
         });
+
+        delete orders[pair];
       }
 
       if (
@@ -145,6 +147,8 @@ binance.websockets.userFutureData(
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].tp2.orderId,
         });
+
+        delete orders[pair];
       }
     }
   }
