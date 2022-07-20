@@ -9,15 +9,18 @@ const binance = new Binance().options({
 });
 
 const orders = {};
+const precisions = {};
 
 parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
 
   console.log(signal);
   if (!signal.open || !signal.tp || !signal.sl) {
-    console.log('Incorrect request');
+    console.log("Incorrect request");
     return;
   }
+
+  const tp1_amount = await filterLotSize(signal.symbol, signal.tp[0].amount);
 
   switch (signal.side) {
     case "buy":
@@ -38,7 +41,7 @@ parentPort.on("message", async (signalString) => {
           side: "SELL",
           type: "STOP_MARKET",
           stopPrice: String(signal.sl.price),
-          quantity: String(signal.amount),
+          quantity: String(signal.open.amount),
           positionSide: "LONG",
         },
         {
@@ -46,7 +49,7 @@ parentPort.on("message", async (signalString) => {
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
           stopPrice: String(signal.tp[0].price),
-          quantity: String(signal.tp[0].amount),
+          quantity: String(tp1_amount),
           positionSide: "LONG",
         },
         {
@@ -54,7 +57,7 @@ parentPort.on("message", async (signalString) => {
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
           stopPrice: String(signal.tp[1].price),
-          quantity: String(signal.tp[1].amount),
+          quantity: String(signal.open.amount - tp1_amount),
           positionSide: "LONG",
         },
       ];
@@ -70,6 +73,8 @@ parentPort.on("message", async (signalString) => {
         tp1: binanceResponse[2],
         tp2: binanceResponse[3],
       };
+
+      console.log(orders[signal.symbol]);
 
       break;
 
@@ -91,11 +96,40 @@ binance.websockets.userFutureData(
 
     const activePairs = Object.keys(orders);
     for (const pair of activePairs) {
+      //Order cancelled by user
+      if (
+        updateInfo.order.isReduceOnly &&
+        updateInfo.order.orderStatus === "FILLED" &&
+        updateInfo.order.originalQuantity === orders[pair].order.origQty &&
+        ((updateInfo.order.side === "SELL" &&
+          orders[pair].order.positionSide === "LONG") ||
+          (updateInfo.order.side === "BUY" &&
+            orders[pair].positionSide === "SHORT"))
+      ) {
+        console.log('close all');
+
+        const cancelSlResponse = await binance.futuresCancel(pair, {
+          orderId: orders[pair].sl.orderId,
+        });
+
+        const cancelTp1Response = await binance.futuresCancel(pair, {
+          orderId: orders[pair].tp1.orderId,
+        });
+
+        const cancelTp2Response = await binance.futuresCancel(pair, {
+          orderId: orders[pair].tp2.orderId,
+        });
+
+        delete orders[pair];
+        return;
+      }
+
       //Set average price for initial order
       if (
         updateInfo.order.orderId === orders[pair].order.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
+        console.log('Set average price', updateInfo.order.averagePrice);
         orders[pair].order.avgPrice = updateInfo.order.averagePrice;
         return;
       }
@@ -122,7 +156,7 @@ binance.websockets.userFutureData(
           ])
         )[0];
 
-        orders[pair].sl.orderId = newSlResponse.orderId
+        orders[pair].sl.orderId = newSlResponse.orderId;
 
         console.log("new sl", newSlResponse);
         return;
@@ -133,23 +167,81 @@ binance.websockets.userFutureData(
         updateInfo.order.orderId === orders[pair].tp2.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
+        console.log('Cancel sl after 2 tp');
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].sl.orderId,
         });
 
         delete orders[pair];
+        return;
       }
 
       if (
         updateInfo.order.orderId === orders[pair].sl.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
+        console.log('Cancel tp after sl');
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].tp2.orderId,
         });
 
         delete orders[pair];
+        return;
       }
     }
   }
 );
+
+(async () => {
+  const exchangeInfo = await binance.futuresExchangeInfo();
+
+  const coinsInfo = exchangeInfo.symbols;
+  // console.log(coinsInfo);
+
+  for (const info of coinsInfo) {
+    precisions[info.symbol] = info.filters;
+  }
+
+  //   console.log(precisions);
+})();
+
+function filterLotSize(symbol, volume) {
+  return new Promise((resolve, reject) => {
+    try {
+      const volumeFilter = precisions[symbol].find(
+        (filter) => filter.filterType === "MARKET_LOT_SIZE"
+      );
+
+      if (volume < volumeFilter.minQty) {
+        reject(
+          new Error(`[${this.options.pair}] Lot less than Binance require!`)
+        );
+      }
+
+      if (volume > volumeFilter.maxQty) {
+        reject(
+          new Error(`[${this.options.pair}] Lot greater than Binance require!`)
+        );
+      }
+
+      const volumeStepSizeRemainder =
+        (volume - volumeFilter.minQty) % volumeFilter.stepSize;
+      if (volumeStepSizeRemainder != 0) {
+        const tokens = volumeFilter.stepSize.split(".");
+        let precision = 0;
+        if (tokens[0] != "1") {
+          for (let i = 0; i < tokens[1].length; i++) {
+            precision++;
+            if (tokens[1][i] == "1") break;
+          }
+        }
+        resolve(+volume.toFixed(precision));
+      }
+
+      resolve(volume);
+    } catch (err) {
+      console.log(err);
+      reject(err);
+    }
+  });
+}
