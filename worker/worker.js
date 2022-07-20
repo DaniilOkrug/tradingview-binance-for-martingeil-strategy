@@ -98,14 +98,14 @@ parentPort.on("message", async (signalString) => {
         const newShortOrders = [
             {
               symbol: signal.symbol,
-              side: "BUY",
+              side: "SELL",
               type: "MARKET",
               quantity: String(signal.open.amount),
               positionSide: "SHORT",
             },
             {
               symbol: signal.symbol,
-              side: "SELL",
+              side: "BUY",
               type: "STOP_MARKET",
               stopPrice: String(
                 await filterPrice(signal.symbol, Number(signal.sl.price))
@@ -115,7 +115,7 @@ parentPort.on("message", async (signalString) => {
             },
             {
               symbol: signal.symbol,
-              side: "SELL",
+              side: "BUY",
               type: "TAKE_PROFIT_MARKET",
               stopPrice: String(
                 await filterPrice(signal.symbol, Number(signal.tp[0].price))
@@ -125,7 +125,7 @@ parentPort.on("message", async (signalString) => {
             },
             {
               symbol: signal.symbol,
-              side: "SELL",
+              side: "BUY",
               type: "TAKE_PROFIT_MARKET",
               stopPrice: String(
                 await filterPrice(signal.symbol, Number(signal.tp[1].price))
@@ -219,7 +219,7 @@ binance.websockets.userFutureData(
           await binance.futuresMultipleOrders([
             {
               symbol: pair,
-              side: updateInfo.order.side,
+              side: orders[pair].sl.side,
               type: "STOP_MARKET",
               stopPrice: String(orders[pair].order.avgPrice),
               quantity: String(orders[pair].tp2.origQty),
