@@ -21,12 +21,14 @@ parentPort.on("message", async (signalString) => {
       // console.log(accountInfo);
       if (typeof orders[signal.symbol] !== "undefined") return;
 
+      if (!signal.open || !signal.tp || !signal.sl) return;
+
       const newOrder = [
         {
           symbol: signal.symbol,
           side: "BUY",
           type: "MARKET",
-          quantity: String(signal.amount),
+          quantity: String(signal.open.amount),
           positionSide: "LONG",
         },
         {
