@@ -211,6 +211,7 @@ binance.websockets.userFutureData(
         updateInfo.order.orderId === orders[pair].tp1.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
+        console.log('replace');
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].sl.orderId,
         });
@@ -218,11 +219,11 @@ binance.websockets.userFutureData(
         const newSlResponse = (
           await binance.futuresMultipleOrders([
             {
-              symbol: pair,
+              symbol: updateInfo.order.symbol,
               side: orders[pair].sl.side,
               type: "STOP_MARKET",
               stopPrice: String(orders[pair].order.avgPrice),
-              quantity: String(orders[pair].tp2.origQty),
+              quantity: orders[pair].tp2.origQty,
               positionSide: updateInfo.order.positionSide,
             },
           ])
