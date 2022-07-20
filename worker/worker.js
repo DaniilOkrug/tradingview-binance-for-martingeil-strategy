@@ -80,7 +80,9 @@ parentPort.on("message", async (signalString) => {
 
       console.log(newLongOrders);
 
-      const binanceLongResponse = await binance.futuresMultipleOrders(newLongOrders);
+      const binanceLongResponse = await binance.futuresMultipleOrders(
+        newLongOrders
+      );
       console.log(binanceLongResponse);
 
       orders[signal.symbol] = {
@@ -95,63 +97,65 @@ parentPort.on("message", async (signalString) => {
       break;
 
     case "sell":
-        const newShortOrders = [
-            {
-              symbol: signal.symbol,
-              side: "SELL",
-              type: "MARKET",
-              quantity: String(signal.open.amount),
-              positionSide: "SHORT",
-            },
-            {
-              symbol: signal.symbol,
-              side: "BUY",
-              type: "STOP_MARKET",
-              stopPrice: String(
-                await filterPrice(signal.symbol, Number(signal.sl.price))
-              ),
-              quantity: String(signal.open.amount),
-              positionSide: "SHORT",
-            },
-            {
-              symbol: signal.symbol,
-              side: "BUY",
-              type: "TAKE_PROFIT_MARKET",
-              stopPrice: String(
-                await filterPrice(signal.symbol, Number(signal.tp[0].price))
-              ),
-              quantity: String(tp1_amount),
-              positionSide: "SHORT",
-            },
-            {
-              symbol: signal.symbol,
-              side: "BUY",
-              type: "TAKE_PROFIT_MARKET",
-              stopPrice: String(
-                await filterPrice(signal.symbol, Number(signal.tp[1].price))
-              ),
-              quantity: String(
-                await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)
-              ),
-              positionSide: "SHORT",
-            },
-          ];
-    
-          console.log(newShortOrders);
-    
-          const binanceShortResponse = await binance.futuresMultipleOrders(newShortOrders);
-          console.log(binanceShortResponse);
-    
-          orders[signal.symbol] = {
-            order: binanceShortResponse[0],
-            sl: binanceShortResponse[1],
-            tp1: binanceShortResponse[2],
-            tp2: binanceShortResponse[3],
-          };
-    
-          console.log(orders[signal.symbol]);
-    
-          break;
+      const newShortOrders = [
+        {
+          symbol: signal.symbol,
+          side: "SELL",
+          type: "MARKET",
+          quantity: String(signal.open.amount),
+          positionSide: "SHORT",
+        },
+        {
+          symbol: signal.symbol,
+          side: "BUY",
+          type: "STOP_MARKET",
+          stopPrice: String(
+            await filterPrice(signal.symbol, Number(signal.sl.price))
+          ),
+          quantity: String(signal.open.amount),
+          positionSide: "SHORT",
+        },
+        {
+          symbol: signal.symbol,
+          side: "BUY",
+          type: "TAKE_PROFIT_MARKET",
+          stopPrice: String(
+            await filterPrice(signal.symbol, Number(signal.tp[0].price))
+          ),
+          quantity: String(tp1_amount),
+          positionSide: "SHORT",
+        },
+        {
+          symbol: signal.symbol,
+          side: "BUY",
+          type: "TAKE_PROFIT_MARKET",
+          stopPrice: String(
+            await filterPrice(signal.symbol, Number(signal.tp[1].price))
+          ),
+          quantity: String(
+            await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)
+          ),
+          positionSide: "SHORT",
+        },
+      ];
+
+      console.log(newShortOrders);
+
+      const binanceShortResponse = await binance.futuresMultipleOrders(
+        newShortOrders
+      );
+      console.log(binanceShortResponse);
+
+      orders[signal.symbol] = {
+        order: binanceShortResponse[0],
+        sl: binanceShortResponse[1],
+        tp1: binanceShortResponse[2],
+        tp2: binanceShortResponse[3],
+      };
+
+      console.log(orders[signal.symbol]);
+
+      break;
 
     default:
       console.log("Wrong trading side");
@@ -164,103 +168,110 @@ binance.websockets.userFutureData(
   console.log(),
   console.log(),
   async (updateInfo) => {
-    console.log(updateInfo);
+    try {
+      console.log(updateInfo);
 
-    const activePairs = Object.keys(orders);
-    for (const pair of activePairs) {
-      //Order cancelled by user
-      if (
-        updateInfo.order.isReduceOnly &&
-        updateInfo.order.orderStatus === "FILLED" &&
-        updateInfo.order.originalQuantity === orders[pair].order.origQty &&
-        ((updateInfo.order.side === "SELL" &&
-          orders[pair].order.positionSide === "LONG") ||
-          (updateInfo.order.side === "BUY" &&
-            orders[pair].positionSide === "SHORT"))
-      ) {
-        console.log("close all");
+      const activePairs = Object.keys(orders);
+      console.log(activePairs);
+      for (const pair of activePairs) {
+        //Order cancelled by user
+        if (
+          updateInfo.order.isReduceOnly &&
+          updateInfo.order.orderStatus === "FILLED" &&
+          updateInfo.order.originalQuantity === orders[pair].order.origQty &&
+          ((updateInfo.order.side === "SELL" &&
+            orders[pair].order.positionSide === "LONG") ||
+            (updateInfo.order.side === "BUY" &&
+              orders[pair].order.positionSide === "SHORT"))
+        ) {
+          console.log("close all");
 
-        const cancelSlResponse = await binance.futuresCancel(pair, {
-          orderId: orders[pair].sl.orderId,
-        });
+          const cancelSlResponse = await binance.futuresCancel(pair, {
+            orderId: orders[pair].sl.orderId,
+          });
 
-        const cancelTp1Response = await binance.futuresCancel(pair, {
-          orderId: orders[pair].tp1.orderId,
-        });
+          const cancelTp1Response = await binance.futuresCancel(pair, {
+            orderId: orders[pair].tp1.orderId,
+          });
 
-        const cancelTp2Response = await binance.futuresCancel(pair, {
-          orderId: orders[pair].tp2.orderId,
-        });
+          const cancelTp2Response = await binance.futuresCancel(pair, {
+            orderId: orders[pair].tp2.orderId,
+          });
 
-        delete orders[pair];
-        return;
+          delete orders[pair];
+
+          console.log(orders);
+          return;
+        }
+
+        //Set average price for initial order
+        if (
+          updateInfo.order.orderId === orders[pair].order.orderId &&
+          updateInfo.order.orderStatus === "FILLED"
+        ) {
+          console.log("Set average price", updateInfo.order.averagePrice);
+          orders[pair].order.avgPrice = updateInfo.order.averagePrice;
+          return;
+        }
+
+        //Replace SL
+        if (
+          updateInfo.order.orderId === orders[pair].tp1.orderId &&
+          updateInfo.order.orderStatus === "FILLED"
+        ) {
+          console.log("replace");
+          const cancelOrderResponse = await binance.futuresCancel(pair, {
+            orderId: orders[pair].sl.orderId,
+          });
+
+          const newSlResponse = (
+            await binance.futuresMultipleOrders([
+              {
+                symbol: updateInfo.order.symbol,
+                side: orders[pair].sl.side,
+                type: "STOP_MARKET",
+                stopPrice: String(orders[pair].order.avgPrice),
+                quantity: orders[pair].tp2.origQty,
+                positionSide: updateInfo.order.positionSide,
+              },
+            ])
+          )[0];
+
+          orders[pair].sl.orderId = newSlResponse.orderId;
+
+          console.log("new sl", newSlResponse);
+          return;
+        }
+
+        //Cancel order for last tp and sl
+        if (
+          updateInfo.order.orderId === orders[pair].tp2.orderId &&
+          updateInfo.order.orderStatus === "FILLED"
+        ) {
+          console.log("Cancel sl after 2 tp");
+          const cancelOrderResponse = await binance.futuresCancel(pair, {
+            orderId: orders[pair].sl.orderId,
+          });
+
+          delete orders[pair];
+          return;
+        }
+
+        if (
+          updateInfo.order.orderId === orders[pair].sl.orderId &&
+          updateInfo.order.orderStatus === "FILLED"
+        ) {
+          console.log("Cancel tp after sl");
+          const cancelOrderResponse = await binance.futuresCancel(pair, {
+            orderId: orders[pair].tp2.orderId,
+          });
+
+          delete orders[pair];
+          return;
+        }
       }
-
-      //Set average price for initial order
-      if (
-        updateInfo.order.orderId === orders[pair].order.orderId &&
-        updateInfo.order.orderStatus === "FILLED"
-      ) {
-        console.log("Set average price", updateInfo.order.averagePrice);
-        orders[pair].order.avgPrice = updateInfo.order.averagePrice;
-        return;
-      }
-
-      //Replace SL
-      if (
-        updateInfo.order.orderId === orders[pair].tp1.orderId &&
-        updateInfo.order.orderStatus === "FILLED"
-      ) {
-        console.log('replace');
-        const cancelOrderResponse = await binance.futuresCancel(pair, {
-          orderId: orders[pair].sl.orderId,
-        });
-
-        const newSlResponse = (
-          await binance.futuresMultipleOrders([
-            {
-              symbol: updateInfo.order.symbol,
-              side: orders[pair].sl.side,
-              type: "STOP_MARKET",
-              stopPrice: String(orders[pair].order.avgPrice),
-              quantity: orders[pair].tp2.origQty,
-              positionSide: updateInfo.order.positionSide,
-            },
-          ])
-        )[0];
-
-        orders[pair].sl.orderId = newSlResponse.orderId;
-
-        console.log("new sl", newSlResponse);
-        return;
-      }
-
-      //Cancel order for last tp and sl
-      if (
-        updateInfo.order.orderId === orders[pair].tp2.orderId &&
-        updateInfo.order.orderStatus === "FILLED"
-      ) {
-        console.log("Cancel sl after 2 tp");
-        const cancelOrderResponse = await binance.futuresCancel(pair, {
-          orderId: orders[pair].sl.orderId,
-        });
-
-        delete orders[pair];
-        return;
-      }
-
-      if (
-        updateInfo.order.orderId === orders[pair].sl.orderId &&
-        updateInfo.order.orderStatus === "FILLED"
-      ) {
-        console.log("Cancel tp after sl");
-        const cancelOrderResponse = await binance.futuresCancel(pair, {
-          orderId: orders[pair].tp2.orderId,
-        });
-
-        delete orders[pair];
-        return;
-      }
+    } catch (error) {
+      console.log(error);
     }
   }
 );
