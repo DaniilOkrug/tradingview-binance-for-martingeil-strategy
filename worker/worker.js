@@ -20,7 +20,7 @@ parentPort.on("message", async (signalString) => {
     return;
   }
 
-  const tp1_amount = await filterLotSize(signal.symbol, signal.tp[0].amount);
+  const tp1_amount = await filterLotSize(signal.symbol, Number(signal.tp[0].amount));
 
   switch (signal.side) {
     case "buy":
