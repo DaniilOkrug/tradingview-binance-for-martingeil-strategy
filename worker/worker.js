@@ -15,6 +15,7 @@ parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
 
   if (!signal.symbol) return;
+  if (typeof orders[signal.symbol] !== "undefined") return;
 
   signal.symbol = signal.symbol.replace("PERP", "");
   console.log(signal);
@@ -34,9 +35,8 @@ parentPort.on("message", async (signalString) => {
     case "buy":
       //   const accountInfo = await binance.futuresAccount();
       // console.log(accountInfo);
-      if (typeof orders[signal.symbol] !== "undefined") return;
 
-      const newOrder = [
+      let newOrder = [
         {
           symbol: signal.symbol,
           side: "BUY",
@@ -80,7 +80,7 @@ parentPort.on("message", async (signalString) => {
 
       console.log(newOrder);
 
-      const binanceResponse = await binance.futuresMultipleOrders(newOrder);
+      let binanceResponse = await binance.futuresMultipleOrders(newOrder);
       console.log(binanceResponse);
 
       orders[signal.symbol] = {
@@ -95,7 +95,63 @@ parentPort.on("message", async (signalString) => {
       break;
 
     case "sell":
-      break;
+        newOrder = [
+            {
+              symbol: signal.symbol,
+              side: "BUY",
+              type: "MARKET",
+              quantity: String(signal.open.amount),
+              positionSide: "SHORT",
+            },
+            {
+              symbol: signal.symbol,
+              side: "SELL",
+              type: "STOP_MARKET",
+              stopPrice: String(
+                await filterPrice(signal.symbol, Number(signal.sl.price))
+              ),
+              quantity: String(signal.open.amount),
+              positionSide: "SHORT",
+            },
+            {
+              symbol: signal.symbol,
+              side: "SELL",
+              type: "TAKE_PROFIT_MARKET",
+              stopPrice: String(
+                await filterPrice(signal.symbol, Number(signal.tp[0].price))
+              ),
+              quantity: String(tp1_amount),
+              positionSide: "SHORT",
+            },
+            {
+              symbol: signal.symbol,
+              side: "SELL",
+              type: "TAKE_PROFIT_MARKET",
+              stopPrice: String(
+                await filterPrice(signal.symbol, Number(signal.tp[1].price))
+              ),
+              quantity: String(
+                await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)
+              ),
+              positionSide: "SHORT",
+            },
+          ];
+    
+          console.log(newOrder);
+    
+          binanceResponse = await binance.futuresMultipleOrders(newOrder);
+          console.log(binanceResponse);
+    
+          orders[signal.symbol] = {
+            order: binanceResponse[0],
+            sl: binanceResponse[1],
+            tp1: binanceResponse[2],
+            tp2: binanceResponse[3],
+          };
+    
+          console.log(orders[signal.symbol]);
+    
+          break;
 
     default:
       console.log("Wrong trading side");
@@ -119,7 +175,7 @@ binance.websockets.userFutureData(
         updateInfo.order.originalQuantity === orders[pair].order.origQty &&
         ((updateInfo.order.side === "SELL" &&
           orders[pair].order.positionSide === "LONG") ||
-          (updateInfo.order.side === "BUY" &&
+          (updateInfo.order.side === "SELL" &&
             orders[pair].positionSide === "SHORT"))
       ) {
         console.log("close all");
@@ -167,7 +223,7 @@ binance.websockets.userFutureData(
               type: "STOP_MARKET",
               stopPrice: String(orders[pair].order.avgPrice),
               quantity: String(orders[pair].tp2.origQty),
-              positionSide: "LONG",
+              positionSide: updateInfo.order.positionSide,
             },
           ])
         )[0];
