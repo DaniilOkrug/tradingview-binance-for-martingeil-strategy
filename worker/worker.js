@@ -14,6 +14,8 @@ const precisions = {};
 parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
 
+  if (!signal.symbol) return;
+
   signal.symbol = signal.symbol.replace('PERP', '');
   console.log(signal);
 
