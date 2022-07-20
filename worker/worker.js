@@ -36,7 +36,7 @@ parentPort.on("message", async (signalString) => {
       //   const accountInfo = await binance.futuresAccount();
       // console.log(accountInfo);
 
-      let newOrder = [
+      const newLongOrders = [
         {
           symbol: signal.symbol,
           side: "BUY",
@@ -78,16 +78,16 @@ parentPort.on("message", async (signalString) => {
         },
       ];
 
-      console.log(newOrder);
+      console.log(newLongOrders);
 
-      let binanceResponse = await binance.futuresMultipleOrders(newOrder);
-      console.log(binanceResponse);
+      const binanceLongResponse = await binance.futuresMultipleOrders(newLongOrders);
+      console.log(binanceLongResponse);
 
       orders[signal.symbol] = {
-        order: binanceResponse[0],
-        sl: binanceResponse[1],
-        tp1: binanceResponse[2],
-        tp2: binanceResponse[3],
+        order: binanceLongResponse[0],
+        sl: binanceLongResponse[1],
+        tp1: binanceLongResponse[2],
+        tp2: binanceLongResponse[3],
       };
 
       console.log(orders[signal.symbol]);
@@ -95,7 +95,7 @@ parentPort.on("message", async (signalString) => {
       break;
 
     case "sell":
-        newOrder = [
+        const newShortOrders = [
             {
               symbol: signal.symbol,
               side: "BUY",
@@ -137,16 +137,16 @@ parentPort.on("message", async (signalString) => {
             },
           ];
     
-          console.log(newOrder);
+          console.log(newShortOrders);
     
-          binanceResponse = await binance.futuresMultipleOrders(newOrder);
-          console.log(binanceResponse);
+          const binanceShortResponse = await binance.futuresMultipleOrders(newShortOrders);
+          console.log(binanceShortResponse);
     
           orders[signal.symbol] = {
-            order: binanceResponse[0],
-            sl: binanceResponse[1],
-            tp1: binanceResponse[2],
-            tp2: binanceResponse[3],
+            order: binanceShortResponse[0],
+            sl: binanceShortResponse[1],
+            tp1: binanceShortResponse[2],
+            tp2: binanceShortResponse[3],
           };
     
           console.log(orders[signal.symbol]);
