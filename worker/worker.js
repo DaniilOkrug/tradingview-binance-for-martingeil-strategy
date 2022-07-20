@@ -16,7 +16,7 @@ parentPort.on("message", async (signalString) => {
 
   if (!signal.symbol) return;
 
-  signal.symbol = signal.symbol.replace('PERP', '');
+  signal.symbol = signal.symbol.replace("PERP", "");
   console.log(signal);
 
   console.log(signal);
@@ -25,7 +25,10 @@ parentPort.on("message", async (signalString) => {
     return;
   }
 
-  const tp1_amount = await filterLotSize(signal.symbol, Number(signal.tp[0].amount));
+  const tp1_amount = await filterLotSize(
+    signal.symbol,
+    Number(signal.tp[0].amount)
+  );
 
   switch (signal.side) {
     case "buy":
@@ -45,7 +48,9 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "STOP_MARKET",
-          stopPrice: String(await filterPrice(signal.symbol, Number(signal.sl.price))),
+          stopPrice: String(
+            await filterPrice(signal.symbol, Number(signal.sl.price))
+          ),
           quantity: String(signal.open.amount),
           positionSide: "LONG",
         },
@@ -53,7 +58,9 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(await filterPrice(signal.symbol, Number(signal.tp[0].price))),
+          stopPrice: String(
+            await filterPrice(signal.symbol, Number(signal.tp[0].price))
+          ),
           quantity: String(tp1_amount),
           positionSide: "LONG",
         },
@@ -61,8 +68,12 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(await filterPrice(signal.symbol, Number(signal.tp[1].price))),
-          quantity: String(await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)),
+          stopPrice: String(
+            await filterPrice(signal.symbol, Number(signal.tp[1].price))
+          ),
+          quantity: String(
+            await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)
+          ),
           positionSide: "LONG",
         },
       ];
@@ -111,7 +122,7 @@ binance.websockets.userFutureData(
           (updateInfo.order.side === "BUY" &&
             orders[pair].positionSide === "SHORT"))
       ) {
-        console.log('close all');
+        console.log("close all");
 
         const cancelSlResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].sl.orderId,
@@ -134,7 +145,7 @@ binance.websockets.userFutureData(
         updateInfo.order.orderId === orders[pair].order.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
-        console.log('Set average price', updateInfo.order.averagePrice);
+        console.log("Set average price", updateInfo.order.averagePrice);
         orders[pair].order.avgPrice = updateInfo.order.averagePrice;
         return;
       }
@@ -145,7 +156,7 @@ binance.websockets.userFutureData(
         updateInfo.order.orderStatus === "FILLED"
       ) {
         const cancelOrderResponse = await binance.futuresCancel(pair, {
-          orderId: orders[pair].sl,
+          orderId: orders[pair].sl.orderId,
         });
 
         const newSlResponse = (
@@ -172,7 +183,7 @@ binance.websockets.userFutureData(
         updateInfo.order.orderId === orders[pair].tp2.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
-        console.log('Cancel sl after 2 tp');
+        console.log("Cancel sl after 2 tp");
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].sl.orderId,
         });
@@ -185,7 +196,7 @@ binance.websockets.userFutureData(
         updateInfo.order.orderId === orders[pair].sl.orderId &&
         updateInfo.order.orderStatus === "FILLED"
       ) {
-        console.log('Cancel tp after sl');
+        console.log("Cancel tp after sl");
         const cancelOrderResponse = await binance.futuresCancel(pair, {
           orderId: orders[pair].tp2.orderId,
         });
@@ -218,15 +229,11 @@ function filterLotSize(symbol, volume) {
       );
 
       if (volume < volumeFilter.minQty) {
-        reject(
-          new Error(`[${symbol}] Lot less than Binance require!`)
-        );
+        reject(new Error(`[${symbol}] Lot less than Binance require!`));
       }
 
       if (volume > volumeFilter.maxQty) {
-        reject(
-          new Error(`[${symbol}] Lot greater than Binance require!`)
-        );
+        reject(new Error(`[${symbol}] Lot greater than Binance require!`));
       }
 
       const volumeStepSizeRemainder =
@@ -252,35 +259,39 @@ function filterLotSize(symbol, volume) {
 }
 
 function filterPrice(symbol, price) {
-    return new Promise((resolve, reject) => {
-        try {
-            if (typeof price === 'undefined') return reject(new Error('Price in checking filter undefined!'));
+  return new Promise((resolve, reject) => {
+    try {
+      if (typeof price === "undefined")
+        return reject(new Error("Price in checking filter undefined!"));
 
-            const priceFilter = precisions[symbol].find((filter) => filter.filterType === 'PRICE_FILTER');
+      const priceFilter = precisions[symbol].find(
+        (filter) => filter.filterType === "PRICE_FILTER"
+      );
 
-            if (price < priceFilter.minPrice) {
-                reject(new Error(`[${symbol}] Price less than Binance require!`));
-            }
+      if (price < priceFilter.minPrice) {
+        reject(new Error(`[${symbol}] Price less than Binance require!`));
+      }
 
-            if (price > priceFilter.maxPrice) {
-                reject(new Error(`[${symbol}] Price greater than Binance require!`));
-            }
+      if (price > priceFilter.maxPrice) {
+        reject(new Error(`[${symbol}] Price greater than Binance require!`));
+      }
 
-            const priceTickSizeRemainder = (price - priceFilter.minPrice) % priceFilter.tickSize;
-            if (priceTickSizeRemainder != 0) {
-                const tokens = priceFilter.tickSize.split('.');
-                let precision = 0;
-                for (let i = 0; i < tokens[1].length; i++) {
-                    precision++;
-                    if (tokens[1][i] == '1') break;
-                }
-                resolve(+price.toFixed(precision));
-            }
-
-            resolve(price);
-        } catch (err) {
-            console.log(err);
-            reject(err);
+      const priceTickSizeRemainder =
+        (price - priceFilter.minPrice) % priceFilter.tickSize;
+      if (priceTickSizeRemainder != 0) {
+        const tokens = priceFilter.tickSize.split(".");
+        let precision = 0;
+        for (let i = 0; i < tokens[1].length; i++) {
+          precision++;
+          if (tokens[1][i] == "1") break;
         }
-    });
+        resolve(+price.toFixed(precision));
+      }
+
+      resolve(price);
+    } catch (err) {
+      console.log(err);
+      reject(err);
+    }
+  });
 }
