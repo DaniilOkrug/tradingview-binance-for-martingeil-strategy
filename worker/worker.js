@@ -214,13 +214,13 @@ function filterLotSize(symbol, volume) {
 
       if (volume < volumeFilter.minQty) {
         reject(
-          new Error(`[${this.options.pair}] Lot less than Binance require!`)
+          new Error(`[${symbol}] Lot less than Binance require!`)
         );
       }
 
       if (volume > volumeFilter.maxQty) {
         reject(
-          new Error(`[${this.options.pair}] Lot greater than Binance require!`)
+          new Error(`[${symbol}] Lot greater than Binance require!`)
         );
       }
 
