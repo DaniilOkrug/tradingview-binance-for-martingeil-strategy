@@ -14,14 +14,16 @@ parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
 
   console.log(signal);
+  if (!signal.open || !signal.tp || !signal.sl) {
+    console.log('Incorrect request');
+    return;
+  }
 
   switch (signal.side) {
     case "buy":
       //   const accountInfo = await binance.futuresAccount();
       // console.log(accountInfo);
       if (typeof orders[signal.symbol] !== "undefined") return;
-
-      if (!signal.open || !signal.tp || !signal.sl) return;
 
       const newOrder = [
         {
