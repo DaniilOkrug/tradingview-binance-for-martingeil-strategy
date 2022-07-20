@@ -60,7 +60,7 @@ parentPort.on("message", async (signalString) => {
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
           stopPrice: String(await filterPrice(signal.symbol, Number(signal.tp[1].price))),
-          quantity: String(signal.open.amount - tp1_amount),
+          quantity: String(await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)),
           positionSide: "LONG",
         },
       ];
