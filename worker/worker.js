@@ -40,7 +40,7 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "STOP_MARKET",
-          stopPrice: String(signal.sl.price),
+          stopPrice: String(await filterPrice(signal.symbol, signal.sl.price)),
           quantity: String(signal.open.amount),
           positionSide: "LONG",
         },
@@ -48,7 +48,7 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(signal.tp[0].price),
+          stopPrice: String(await filterPrice(signal.symbol, signal.tp[0].price)),
           quantity: String(tp1_amount),
           positionSide: "LONG",
         },
@@ -56,7 +56,7 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(signal.tp[1].price),
+          stopPrice: String(await filterPrice(signal.symbol, signal.tp[1].price)),
           quantity: String(signal.open.amount - tp1_amount),
           positionSide: "LONG",
         },
@@ -244,4 +244,38 @@ function filterLotSize(symbol, volume) {
       reject(err);
     }
   });
+}
+
+function filterPrice(symbol, price) {
+    return new Promise((resolve, reject) => {
+        try {
+            if (typeof price === 'undefined') return reject(new Error('Price in checking filter undefined!'));
+
+            const priceFilter = precisions[symbol].find((filter) => filter.filterType === 'PRICE_FILTER');
+
+            if (price < priceFilter.minPrice) {
+                reject(new Error(`[${symbol}] Price less than Binance require!`));
+            }
+
+            if (price > priceFilter.maxPrice) {
+                reject(new Error(`[${symbol}] Price greater than Binance require!`));
+            }
+
+            const priceTickSizeRemainder = (price - priceFilter.minPrice) % priceFilter.tickSize;
+            if (priceTickSizeRemainder != 0) {
+                const tokens = priceFilter.tickSize.split('.');
+                let precision = 0;
+                for (let i = 0; i < tokens[1].length; i++) {
+                    precision++;
+                    if (tokens[1][i] == '1') break;
+                }
+                resolve(+price.toFixed(precision));
+            }
+
+            resolve(price);
+        } catch (err) {
+            console.log(err);
+            reject(err);
+        }
+    });
 }
