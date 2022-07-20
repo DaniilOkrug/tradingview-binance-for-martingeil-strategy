@@ -14,6 +14,9 @@ const precisions = {};
 parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
 
+  signal.symbol = signal.symbol.replace('PERP', '');
+  console.log(signal);
+
   console.log(signal);
   if (!signal.open || !signal.tp || !signal.sl) {
     console.log("Incorrect request");
