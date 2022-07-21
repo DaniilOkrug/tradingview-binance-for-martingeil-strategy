@@ -31,14 +31,17 @@ parentPort.on("message", async (signalString) => {
     Number(signal.tp[0].amount)
   );
 
-  const mainAmount = await filterLotSize(signal.symbol, Number(signal.open.amount));
+  const mainAmount = await filterLotSize(
+    signal.symbol,
+    Number(signal.open.amount)
+  );
 
   switch (signal.side) {
     case "buy":
       //   const accountInfo = await binance.futuresAccount();
       // console.log(accountInfo);
 
-      const newLongOrders = [
+      const mainLongOrder = [
         {
           symbol: signal.symbol,
           side: "BUY",
@@ -46,6 +49,18 @@ parentPort.on("message", async (signalString) => {
           quantity: String(mainAmount),
           positionSide: "LONG",
         },
+      ];
+
+      const binanceMainLongResponse = await binance.futuresMultipleOrders(
+        mainLongOrder
+      );
+
+      if (!binanceMainLongResponse.orderId) {
+        console.log(binanceMainLongResponse);
+        return;
+      }
+
+      const newLongOrders = [
         {
           symbol: signal.symbol,
           side: "SELL",
@@ -99,7 +114,7 @@ parentPort.on("message", async (signalString) => {
       break;
 
     case "sell":
-      const newShortOrders = [
+      const mainShortOrder = [
         {
           symbol: signal.symbol,
           side: "SELL",
@@ -107,6 +122,17 @@ parentPort.on("message", async (signalString) => {
           quantity: String(mainAmount),
           positionSide: "SHORT",
         },
+      ];
+
+      const binanceainShortResponse = await binance.futuresMultipleOrders(
+        mainShortOrder
+      );
+
+      if (!binanceainShortResponse.orderId) {
+        return;
+      }
+
+      const newShortOrders = [
         {
           symbol: signal.symbol,
           side: "BUY",
