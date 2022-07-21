@@ -31,6 +31,8 @@ parentPort.on("message", async (signalString) => {
     Number(signal.tp[0].amount)
   );
 
+  const mainAmount = await filterLotSize(signal.symbol, Number(signal.open.amount));
+
   switch (signal.side) {
     case "buy":
       //   const accountInfo = await binance.futuresAccount();
@@ -41,7 +43,7 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "BUY",
           type: "MARKET",
-          quantity: String(signal.open.amount),
+          quantity: String(mainAmount),
           positionSide: "LONG",
         },
         {
@@ -51,7 +53,7 @@ parentPort.on("message", async (signalString) => {
           stopPrice: String(
             await filterPrice(signal.symbol, Number(signal.sl.price))
           ),
-          quantity: String(signal.open.amount),
+          quantity: String(mainAmount),
           positionSide: "LONG",
         },
         {
@@ -72,7 +74,7 @@ parentPort.on("message", async (signalString) => {
             await filterPrice(signal.symbol, Number(signal.tp[1].price))
           ),
           quantity: String(
-            await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)
+            await filterLotSize(signal.symbol, mainAmount - tp1_amount)
           ),
           positionSide: "LONG",
         },
@@ -102,7 +104,7 @@ parentPort.on("message", async (signalString) => {
           symbol: signal.symbol,
           side: "SELL",
           type: "MARKET",
-          quantity: String(signal.open.amount),
+          quantity: String(mainAmount),
           positionSide: "SHORT",
         },
         {
@@ -112,7 +114,7 @@ parentPort.on("message", async (signalString) => {
           stopPrice: String(
             await filterPrice(signal.symbol, Number(signal.sl.price))
           ),
-          quantity: String(signal.open.amount),
+          quantity: String(mainAmount),
           positionSide: "SHORT",
         },
         {
@@ -133,7 +135,7 @@ parentPort.on("message", async (signalString) => {
             await filterPrice(signal.symbol, Number(signal.tp[1].price))
           ),
           quantity: String(
-            await filterLotSize(signal.symbol, signal.open.amount - tp1_amount)
+            await filterLotSize(signal.symbol, mainAmount - tp1_amount)
           ),
           positionSide: "SHORT",
         },
@@ -238,6 +240,7 @@ binance.websockets.userFutureData(
           )[0];
 
           orders[pair].sl.orderId = newSlResponse.orderId;
+          orders[pair].order.origQty = orders[pair].tp2.origQty;
 
           console.log("new sl", newSlResponse);
           return;
