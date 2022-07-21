@@ -60,6 +60,8 @@ parentPort.on("message", async (signalString) => {
         return;
       }
 
+      binanceMainLongResponse[0].avgPrice = signal.open.price;
+
       const newLongOrders = [
         {
           symbol: signal.symbol,
@@ -132,6 +134,8 @@ parentPort.on("message", async (signalString) => {
         console.log(binanceMainShortResponse);
         return;
       }
+
+      binanceMainShortResponse[0].avgPrice = signal.open.price;
 
       const newShortOrders = [
         {
@@ -207,7 +211,8 @@ binance.websockets.userFutureData(
         if (
           updateInfo?.order?.isReduceOnly &&
           updateInfo?.order?.orderStatus === "FILLED" &&
-          updateInfo?.order?.originalQuantity === orders[pair]?.order?.origQty &&
+          updateInfo?.order?.originalQuantity ===
+            orders[pair]?.order?.origQty &&
           ((updateInfo?.order?.side === "SELL" &&
             orders[pair]?.order?.positionSide === "LONG") ||
             (updateInfo?.order?.side === "BUY" &&
@@ -259,7 +264,9 @@ binance.websockets.userFutureData(
                 symbol: updateInfo.order.symbol,
                 side: orders[pair].sl.side,
                 type: "STOP_MARKET",
-                stopPrice: String(orders[pair].order.avgPrice),
+                stopPrice: String(
+                  await filterPrice(pair, Number(orders[pair].order.avgPrice))
+                ),
                 quantity: orders[pair].tp2.origQty,
                 positionSide: updateInfo.order.positionSide,
               },
