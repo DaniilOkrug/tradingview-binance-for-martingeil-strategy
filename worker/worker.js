@@ -55,7 +55,7 @@ parentPort.on("message", async (signalString) => {
         mainLongOrder
       );
 
-      if (!binanceMainLongResponse.orderId) {
+      if (!binanceMainLongResponse[0].orderId) {
         console.log(binanceMainLongResponse);
         return;
       }
@@ -128,7 +128,8 @@ parentPort.on("message", async (signalString) => {
         mainShortOrder
       );
 
-      if (!binanceainShortResponse.orderId) {
+      if (!binanceainShortResponse[0].orderId) {
+        console.log(binanceainShortResponse);
         return;
       }
 
