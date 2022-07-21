@@ -103,10 +103,10 @@ parentPort.on("message", async (signalString) => {
       console.log(binanceLongResponse);
 
       orders[signal.symbol] = {
-        order: binanceLongResponse[0],
-        sl: binanceLongResponse[1],
-        tp1: binanceLongResponse[2],
-        tp2: binanceLongResponse[3],
+        order: binanceMainLongResponse[0],
+        sl: binanceLongResponse[0],
+        tp1: binanceLongResponse[1],
+        tp2: binanceLongResponse[2],
       };
 
       console.log(orders[signal.symbol]);
@@ -124,12 +124,12 @@ parentPort.on("message", async (signalString) => {
         },
       ];
 
-      const binanceainShortResponse = await binance.futuresMultipleOrders(
+      const binanceMainShortResponse = await binance.futuresMultipleOrders(
         mainShortOrder
       );
 
-      if (!binanceainShortResponse[0].orderId) {
-        console.log(binanceainShortResponse);
+      if (!binanceMainShortResponse[0].orderId) {
+        console.log(binanceMainShortResponse);
         return;
       }
 
@@ -176,10 +176,10 @@ parentPort.on("message", async (signalString) => {
       console.log(binanceShortResponse);
 
       orders[signal.symbol] = {
-        order: binanceShortResponse[0],
-        sl: binanceShortResponse[1],
-        tp1: binanceShortResponse[2],
-        tp2: binanceShortResponse[3],
+        order: binanceMainShortResponse[0],
+        sl: binanceShortResponse[0],
+        tp1: binanceShortResponse[1],
+        tp2: binanceShortResponse[2],
       };
 
       console.log(orders[signal.symbol]);
@@ -205,13 +205,13 @@ binance.websockets.userFutureData(
       for (const pair of activePairs) {
         //Order cancelled by user
         if (
-          updateInfo.order.isReduceOnly &&
-          updateInfo.order.orderStatus === "FILLED" &&
-          updateInfo.order.originalQuantity === orders[pair].order.origQty &&
-          ((updateInfo.order.side === "SELL" &&
-            orders[pair].order.positionSide === "LONG") ||
-            (updateInfo.order.side === "BUY" &&
-              orders[pair].order.positionSide === "SHORT"))
+          updateInfo?.order?.isReduceOnly &&
+          updateInfo?.order?.orderStatus === "FILLED" &&
+          updateInfo?.order?.originalQuantity === orders[pair]?.order?.origQty &&
+          ((updateInfo?.order?.side === "SELL" &&
+            orders[pair]?.order?.positionSide === "LONG") ||
+            (updateInfo?.order?.side === "BUY" &&
+              orders[pair]?.order?.positionSide === "SHORT"))
         ) {
           console.log("close all");
 
@@ -235,8 +235,8 @@ binance.websockets.userFutureData(
 
         //Set average price for initial order
         if (
-          updateInfo.order.orderId === orders[pair].order.orderId &&
-          updateInfo.order.orderStatus === "FILLED"
+          updateInfo?.order?.orderId === orders[pair]?.order?.orderId &&
+          updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("Set average price", updateInfo.order.averagePrice);
           orders[pair].order.avgPrice = updateInfo.order.averagePrice;
@@ -245,8 +245,8 @@ binance.websockets.userFutureData(
 
         //Replace SL
         if (
-          updateInfo.order.orderId === orders[pair].tp1.orderId &&
-          updateInfo.order.orderStatus === "FILLED"
+          updateInfo?.order?.orderId === orders[pair]?.tp1?.orderId &&
+          updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("replace");
           const cancelOrderResponse = await binance.futuresCancel(pair, {
@@ -275,8 +275,8 @@ binance.websockets.userFutureData(
 
         //Cancel order for last tp and sl
         if (
-          updateInfo.order.orderId === orders[pair].tp2.orderId &&
-          updateInfo.order.orderStatus === "FILLED"
+          updateInfo?.order?.orderId === orders[pair]?.tp2?.orderId &&
+          updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("Cancel sl after 2 tp");
           const cancelOrderResponse = await binance.futuresCancel(pair, {
@@ -288,8 +288,8 @@ binance.websockets.userFutureData(
         }
 
         if (
-          updateInfo.order.orderId === orders[pair].sl.orderId &&
-          updateInfo.order.orderStatus === "FILLED"
+          updateInfo?.order?.orderId === orders[pair].sl.orderId &&
+          updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("Cancel tp after sl");
           const cancelOrderResponse = await binance.futuresCancel(pair, {
