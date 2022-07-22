@@ -12,188 +12,192 @@ const orders = {};
 const precisions = {};
 
 parentPort.on("message", async (signalString) => {
-  const signal = JSON.parse(signalString);
+  try {
+    const signal = JSON.parse(signalString);
 
-  if (!signal.symbol) return;
-  if (typeof orders[signal.symbol] !== "undefined") return;
+    if (!signal.symbol) return;
+    if (typeof orders[signal.symbol] !== "undefined") return;
 
-  signal.symbol = signal.symbol.replace("PERP", "");
-  console.log(signal);
+    signal.symbol = signal.symbol.replace("PERP", "");
+    console.log(signal);
 
-  console.log(signal);
-  if (!signal.open || !signal.tp || !signal.sl) {
-    console.log("Incorrect request");
-    return;
-  }
-
-  const tp1_amount = await filterLotSize(
-    signal.symbol,
-    Number(signal.tp[0].amount)
-  );
-
-  const mainAmount = await filterLotSize(
-    signal.symbol,
-    Number(signal.open.amount)
-  );
-
-  switch (signal.side) {
-    case "buy":
-      //   const accountInfo = await binance.futuresAccount();
-      // console.log(accountInfo);
-
-      const mainLongOrder = [
-        {
-          symbol: signal.symbol,
-          side: "BUY",
-          type: "MARKET",
-          quantity: String(mainAmount),
-          positionSide: "LONG",
-        },
-      ];
-
-      const binanceMainLongResponse = await binance.futuresMultipleOrders(
-        mainLongOrder
-      );
-
-      if (!binanceMainLongResponse[0].orderId) {
-        console.log(binanceMainLongResponse);
-        return;
-      }
-
-      binanceMainLongResponse[0].avgPrice = signal.open.price;
-
-      const newLongOrders = [
-        {
-          symbol: signal.symbol,
-          side: "SELL",
-          type: "STOP_MARKET",
-          stopPrice: String(
-            await filterPrice(signal.symbol, Number(signal.sl.price))
-          ),
-          quantity: String(mainAmount),
-          positionSide: "LONG",
-        },
-        {
-          symbol: signal.symbol,
-          side: "SELL",
-          type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(
-            await filterPrice(signal.symbol, Number(signal.tp[0].price))
-          ),
-          quantity: String(tp1_amount),
-          positionSide: "LONG",
-        },
-        {
-          symbol: signal.symbol,
-          side: "SELL",
-          type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(
-            await filterPrice(signal.symbol, Number(signal.tp[1].price))
-          ),
-          quantity: String(
-            await filterLotSize(signal.symbol, mainAmount - tp1_amount)
-          ),
-          positionSide: "LONG",
-        },
-      ];
-
-      console.log(newLongOrders);
-
-      const binanceLongResponse = await binance.futuresMultipleOrders(
-        newLongOrders
-      );
-      console.log(binanceLongResponse);
-
-      orders[signal.symbol] = {
-        order: binanceMainLongResponse[0],
-        sl: binanceLongResponse[0],
-        tp1: binanceLongResponse[1],
-        tp2: binanceLongResponse[2],
-      };
-
-      console.log(orders[signal.symbol]);
-
-      break;
-
-    case "sell":
-      const mainShortOrder = [
-        {
-          symbol: signal.symbol,
-          side: "SELL",
-          type: "MARKET",
-          quantity: String(mainAmount),
-          positionSide: "SHORT",
-        },
-      ];
-
-      const binanceMainShortResponse = await binance.futuresMultipleOrders(
-        mainShortOrder
-      );
-
-      if (!binanceMainShortResponse[0].orderId) {
-        console.log(binanceMainShortResponse);
-        return;
-      }
-
-      binanceMainShortResponse[0].avgPrice = signal.open.price;
-
-      const newShortOrders = [
-        {
-          symbol: signal.symbol,
-          side: "BUY",
-          type: "STOP_MARKET",
-          stopPrice: String(
-            await filterPrice(signal.symbol, Number(signal.sl.price))
-          ),
-          quantity: String(mainAmount),
-          positionSide: "SHORT",
-        },
-        {
-          symbol: signal.symbol,
-          side: "BUY",
-          type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(
-            await filterPrice(signal.symbol, Number(signal.tp[0].price))
-          ),
-          quantity: String(tp1_amount),
-          positionSide: "SHORT",
-        },
-        {
-          symbol: signal.symbol,
-          side: "BUY",
-          type: "TAKE_PROFIT_MARKET",
-          stopPrice: String(
-            await filterPrice(signal.symbol, Number(signal.tp[1].price))
-          ),
-          quantity: String(
-            await filterLotSize(signal.symbol, mainAmount - tp1_amount)
-          ),
-          positionSide: "SHORT",
-        },
-      ];
-
-      console.log(newShortOrders);
-
-      const binanceShortResponse = await binance.futuresMultipleOrders(
-        newShortOrders
-      );
-      console.log(binanceShortResponse);
-
-      orders[signal.symbol] = {
-        order: binanceMainShortResponse[0],
-        sl: binanceShortResponse[0],
-        tp1: binanceShortResponse[1],
-        tp2: binanceShortResponse[2],
-      };
-
-      console.log(orders[signal.symbol]);
-
-      break;
-
-    default:
-      console.log("Wrong trading side");
+    console.log(signal);
+    if (!signal.open || !signal.tp || !signal.sl) {
+      console.log("Incorrect request");
       return;
-      break;
+    }
+
+    const tp1_amount = await filterLotSize(
+      signal.symbol,
+      Number(signal.tp[0].amount)
+    );
+
+    const mainAmount = await filterLotSize(
+      signal.symbol,
+      Number(signal.open.amount)
+    );
+
+    switch (signal.side) {
+      case "buy":
+        //   const accountInfo = await binance.futuresAccount();
+        // console.log(accountInfo);
+
+        const mainLongOrder = [
+          {
+            symbol: signal.symbol,
+            side: "BUY",
+            type: "MARKET",
+            quantity: String(mainAmount),
+            positionSide: "LONG",
+          },
+        ];
+
+        const binanceMainLongResponse = await binance.futuresMultipleOrders(
+          mainLongOrder
+        );
+
+        if (!binanceMainLongResponse[0].orderId) {
+          console.log(binanceMainLongResponse);
+          return;
+        }
+
+        binanceMainLongResponse[0].avgPrice = signal.open.price;
+
+        const newLongOrders = [
+          {
+            symbol: signal.symbol,
+            side: "SELL",
+            type: "STOP_MARKET",
+            stopPrice: String(
+              await filterPrice(signal.symbol, Number(signal.sl.price))
+            ),
+            quantity: String(mainAmount),
+            positionSide: "LONG",
+          },
+          {
+            symbol: signal.symbol,
+            side: "SELL",
+            type: "TAKE_PROFIT_MARKET",
+            stopPrice: String(
+              await filterPrice(signal.symbol, Number(signal.tp[0].price))
+            ),
+            quantity: String(tp1_amount),
+            positionSide: "LONG",
+          },
+          {
+            symbol: signal.symbol,
+            side: "SELL",
+            type: "TAKE_PROFIT_MARKET",
+            stopPrice: String(
+              await filterPrice(signal.symbol, Number(signal.tp[1].price))
+            ),
+            quantity: String(
+              await filterLotSize(signal.symbol, mainAmount - tp1_amount)
+            ),
+            positionSide: "LONG",
+          },
+        ];
+
+        console.log(newLongOrders);
+
+        const binanceLongResponse = await binance.futuresMultipleOrders(
+          newLongOrders
+        );
+        console.log(binanceLongResponse);
+
+        orders[signal.symbol] = {
+          order: binanceMainLongResponse[0],
+          sl: binanceLongResponse[0],
+          tp1: binanceLongResponse[1],
+          tp2: binanceLongResponse[2],
+        };
+
+        console.log(orders[signal.symbol]);
+
+        break;
+
+      case "sell":
+        const mainShortOrder = [
+          {
+            symbol: signal.symbol,
+            side: "SELL",
+            type: "MARKET",
+            quantity: String(mainAmount),
+            positionSide: "SHORT",
+          },
+        ];
+
+        const binanceMainShortResponse = await binance.futuresMultipleOrders(
+          mainShortOrder
+        );
+
+        if (!binanceMainShortResponse[0].orderId) {
+          console.log(binanceMainShortResponse);
+          return;
+        }
+
+        binanceMainShortResponse[0].avgPrice = signal.open.price;
+
+        const newShortOrders = [
+          {
+            symbol: signal.symbol,
+            side: "BUY",
+            type: "STOP_MARKET",
+            stopPrice: String(
+              await filterPrice(signal.symbol, Number(signal.sl.price))
+            ),
+            quantity: String(mainAmount),
+            positionSide: "SHORT",
+          },
+          {
+            symbol: signal.symbol,
+            side: "BUY",
+            type: "TAKE_PROFIT_MARKET",
+            stopPrice: String(
+              await filterPrice(signal.symbol, Number(signal.tp[0].price))
+            ),
+            quantity: String(tp1_amount),
+            positionSide: "SHORT",
+          },
+          {
+            symbol: signal.symbol,
+            side: "BUY",
+            type: "TAKE_PROFIT_MARKET",
+            stopPrice: String(
+              await filterPrice(signal.symbol, Number(signal.tp[1].price))
+            ),
+            quantity: String(
+              await filterLotSize(signal.symbol, mainAmount - tp1_amount)
+            ),
+            positionSide: "SHORT",
+          },
+        ];
+
+        console.log(newShortOrders);
+
+        const binanceShortResponse = await binance.futuresMultipleOrders(
+          newShortOrders
+        );
+        console.log(binanceShortResponse);
+
+        orders[signal.symbol] = {
+          order: binanceMainShortResponse[0],
+          sl: binanceShortResponse[0],
+          tp1: binanceShortResponse[1],
+          tp2: binanceShortResponse[2],
+        };
+
+        console.log(orders[signal.symbol]);
+
+        break;
+
+      default:
+        console.log("Wrong trading side");
+        return;
+        break;
+    }
+  } catch (error) {
+    console.log(error);
   }
 });
 
