@@ -337,14 +337,6 @@ function filterLotSize(symbol, volume) {
         (filter) => filter.filterType === "MARKET_LOT_SIZE"
       );
 
-      if (volume < volumeFilter.minQty) {
-        reject(new Error(`[${symbol}] Lot less than Binance require!`));
-      }
-
-      if (volume > volumeFilter.maxQty) {
-        reject(new Error(`[${symbol}] Lot greater than Binance require!`));
-      }
-
       const volumeStepSizeRemainder =
         (volume - volumeFilter.minQty) % volumeFilter.stepSize;
       if (volumeStepSizeRemainder != 0) {
