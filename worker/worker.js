@@ -6,6 +6,12 @@ console.log("New Bot Manager");
 const binance = new Binance().options({
   APIKEY: workerData.key,
   APISECRET: workerData.secret,
+  useServerTime: true,
+  recvWindow: 60000, // Set a higher recvWindow to increase response timeout
+  verbose: true, // Add extra output when subscribing to WebSockets, etc
+  log: (log) => {
+    console.log(log); // You can create your own logger here, or disable console output
+  },
 });
 
 const orders = {};
