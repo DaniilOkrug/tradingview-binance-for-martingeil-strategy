@@ -1,5 +1,6 @@
 const { parentPort, workerData } = require("worker_threads");
 const Binance = require("node-binance-api");
+const {logger} = require('../logger');
 
 console.log("New Bot Manager");
 
@@ -20,9 +21,13 @@ const precisions = {};
 parentPort.on("message", async (signalString) => {
   try {
     const signal = JSON.parse(signalString);
+    logger.info(signal)
 
     if (!signal.symbol) return;
-    if (typeof orders[signal.symbol] !== "undefined") return;
+    if (typeof orders[signal.symbol] !== "undefined") {
+      logger.error(`${signal.symbol} symbol already active`)
+      return;
+    }
 
     signal.symbol = signal.symbol.replace("PERP", "");
     console.log(signal);
@@ -30,6 +35,7 @@ parentPort.on("message", async (signalString) => {
     console.log(signal);
     if (!signal.open || !signal.tp || !signal.sl) {
       console.log("Incorrect request");
+      logger.error(`${signal.symbol} Incorrect request ${signal}`);
       return;
     }
 
@@ -64,6 +70,7 @@ parentPort.on("message", async (signalString) => {
 
         if (!binanceMainLongResponse[0].orderId) {
           console.log(binanceMainLongResponse);
+          logger.error(binanceMainLongResponse);
           return;
         }
 
@@ -139,6 +146,7 @@ parentPort.on("message", async (signalString) => {
 
         if (!binanceMainShortResponse[0].orderId) {
           console.log(binanceMainShortResponse);
+          logger.error(binanceMainShortResponse);
           return;
         }
 
@@ -204,6 +212,7 @@ parentPort.on("message", async (signalString) => {
     }
   } catch (error) {
     console.log(error);
+    logger.error(error);
   }
 });
 
@@ -264,6 +273,7 @@ binance.websockets.userFutureData(
           updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("replace");
+          logger.info(pair + ' replace SL')
           const cancelOrderResponse = await binance.futuresCancel(pair, {
             orderId: orders[pair].sl.orderId,
           });
@@ -319,6 +329,7 @@ binance.websockets.userFutureData(
       }
     } catch (error) {
       console.log(error);
+      logger.error(error);
     }
   }
 );
