@@ -1,6 +1,6 @@
 const Router = require("express").Router;
 
-const BinanceWorkerManager = require('../worker/index');
+const BinanceWorkerManager = require('../worker/indexBinance');
 
 const router = new Router();
 

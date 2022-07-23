@@ -1,4 +1,5 @@
 const { Worker } = require("worker_threads");
+const TelegramManager = require('./indexTelegram');
 
 class BinanceWorkerManager {
     #worker;
@@ -6,10 +7,10 @@ class BinanceWorkerManager {
     createWorker(key, secret) {
         return new Promise((resolve, reject) => {
             try {
-                const worker = new Worker("./worker/worker.js", { workerData: { key, secret } });
+                const worker = new Worker("./worker/workerBinance.js", { workerData: { key, secret } });
 
                 worker.on("message", async (data) => {
-                    console.log(data);
+                    TelegramManager.newSignal(data);
                 });
 
                 worker.on("error", error => {

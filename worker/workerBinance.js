@@ -127,6 +127,8 @@ parentPort.on("message", async (signalString) => {
 
         console.log(orders[signal.symbol]);
 
+        parentPort.postMessage(JSON.stringify(signal))
+
         break;
 
       case "sell":
