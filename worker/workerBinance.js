@@ -1,6 +1,6 @@
 const { parentPort, workerData } = require("worker_threads");
 const Binance = require("node-binance-api");
-const {logger} = require('../logger');
+const { logger } = require("../logger");
 
 console.log("New Bot Manager");
 
@@ -21,11 +21,11 @@ const precisions = {};
 parentPort.on("message", async (signalString) => {
   try {
     const signal = JSON.parse(signalString);
-    logger.info(signal)
+    logger.info(signal);
 
     if (!signal.symbol) return;
     if (typeof orders[signal.symbol] !== "undefined") {
-      logger.error(`${signal.symbol} symbol already active`)
+      logger.error(`${signal.symbol} symbol already active`);
       return;
     }
 
@@ -34,6 +34,10 @@ parentPort.on("message", async (signalString) => {
 
     console.log(signal);
     if (!signal.open || !signal.tp || !signal.sl) {
+      if (signal.close_tp) {
+        parentPort.postMessage(JSON.stringify(signal));
+      }
+
       console.log("Incorrect request");
       logger.error(`${signal.symbol} Incorrect request ${signal}`);
       return;
@@ -127,7 +131,7 @@ parentPort.on("message", async (signalString) => {
 
         console.log(orders[signal.symbol]);
 
-        parentPort.postMessage(JSON.stringify(signal))
+        parentPort.postMessage(JSON.stringify(signal));
 
         break;
 
@@ -275,7 +279,7 @@ binance.websockets.userFutureData(
           updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("replace");
-          logger.info(pair + ' replace SL')
+          logger.info(pair + " replace SL");
           const cancelOrderResponse = await binance.futuresCancel(pair, {
             orderId: orders[pair].sl.orderId,
           });
