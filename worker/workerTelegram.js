@@ -20,7 +20,7 @@ parentPort.on("message", async (signalString) => {
 
   if (signal.close_tp) {
     for (const charId of botStep_chatIDs) {
-        botStep.sendMessage(charId, `${signal.symbol} ${signal.close_tp}/2`);
+      botProfit.sendMessage(charId, `${signal.symbol} ${signal.close_tp}/2`);
     }
   }
 
