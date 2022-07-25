@@ -76,6 +76,14 @@ parentPort.on("message", async (signalString) => {
         if (!binanceMainLongResponse[0].orderId) {
           console.log(binanceMainLongResponse);
           logger.error(binanceMainLongResponse);
+
+          parentPort.postMessage(
+            JSON.stringify({
+              symbol: signal.symbol,
+              error: binanceMainLongResponse,
+            })
+          );
+
           return;
         }
 
@@ -124,12 +132,19 @@ parentPort.on("message", async (signalString) => {
           newLongOrders
         );
         console.log(binanceLongResponse);
-        
+
         //Проверка ошибки при выставлении оредров
-        for(const binanceResponse of binanceLongResponse) {
+        for (const binanceResponse of binanceLongResponse) {
           if (!binanceResponse.orderId) {
             logger.error(binanceLongResponse);
-            console.log('Canceling all orders due to one of the orders error!');
+            console.log("Canceling all orders due to one of the orders error!");
+
+            parentPort.postMessage(
+              JSON.stringify({
+                symbol: signal.symbol,
+                error: binanceLongResponse,
+              })
+            );
 
             //Закрытие позиции
             const mainLongCloseResponse = await binance.futuresMultipleOrders([
@@ -145,10 +160,13 @@ parentPort.on("message", async (signalString) => {
             //Закрытие ордеров
             for (let i = 0; i < binanceLongResponse.length; i++) {
               const response = binanceLongResponse[i];
-              
-              const cancelResponse = await binance.futuresCancel(signal.symbol, {
-                orderId: response.orderId,
-              });
+
+              const cancelResponse = await binance.futuresCancel(
+                signal.symbol,
+                {
+                  orderId: response.orderId,
+                }
+              );
             }
 
             return;
@@ -190,6 +208,14 @@ parentPort.on("message", async (signalString) => {
         if (!binanceMainShortResponse[0].orderId) {
           console.log(binanceMainShortResponse);
           logger.error(binanceMainShortResponse);
+
+          parentPort.postMessage(
+            JSON.stringify({
+              symbol: signal.symbol,
+              error: binanceMainShortResponse,
+            })
+          );
+
           return;
         }
 
@@ -239,10 +265,17 @@ parentPort.on("message", async (signalString) => {
         console.log(binanceShortResponse);
 
         //Проверка ошибки при выставлении оредров
-        for(const binanceResponse of binanceShortResponse) {
+        for (const binanceResponse of binanceShortResponse) {
           if (!binanceResponse.orderId) {
             logger.error(binanceShortResponse);
-            console.log('Canceling all orders due to one of the orders error!');
+            console.log("Canceling all orders due to one of the orders error!");
+
+            parentPort.postMessage(
+              JSON.stringify({
+                symbol: signal.symbol,
+                error: binanceShortResponse,
+              })
+            );
 
             //Закрытие позиции
             const mainLongCloseResponse = await binance.futuresMultipleOrders([
@@ -258,10 +291,13 @@ parentPort.on("message", async (signalString) => {
             //Закрытие ордеров
             for (let i = 0; i < binanceShortResponse.length; i++) {
               const response = binanceShortResponse[i];
-              
-              const cancelResponse = await binance.futuresCancel(signal.symbol, {
-                orderId: response.orderId,
-              });
+
+              const cancelResponse = await binance.futuresCancel(
+                signal.symbol,
+                {
+                  orderId: response.orderId,
+                }
+              );
             }
 
             return;
@@ -279,7 +315,7 @@ parentPort.on("message", async (signalString) => {
         console.log(orders[signal.symbol]);
 
         //Отсылаем сигнал в телеграм
-        parentPort.postMessage(JSON.stringify(signal))
+        parentPort.postMessage(JSON.stringify(signal));
 
         break;
 

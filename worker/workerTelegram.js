@@ -4,9 +4,11 @@ const { logger } = require("../logger");
 
 const botStep = new TelegramBot(workerData.tokenStep, { polling: true });
 const botProfit = new TelegramBot(workerData.tokenProfit, { polling: true });
+const botError = new TelegramBot(workerData.tokenProfit, { polling: true });
 
 const botStep_chatIDs = [];
 const botProfit_chatIDs = [];
+const botError_chatIDs = [];
 
 parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
@@ -21,6 +23,12 @@ parentPort.on("message", async (signalString) => {
   if (signal.close_tp) {
     for (const charId of botStep_chatIDs) {
       botProfit.sendMessage(charId, `${signal.symbol} ${signal.close_tp}/2`);
+    }
+  }
+
+  if (signal.error) {
+    for (const charId of botStep_chatIDs) {
+      botProfit.sendMessage(charId, signal);
     }
   }
 });
@@ -44,6 +52,18 @@ botProfit.onText(/\/start/, (msg, match) => {
 
   const chatId = msg.chat.id;
   if (!botProfit_chatIDs.includes(chatId)) botProfit_chatIDs.push(chatId);
+
+  // send back the matched "whatever" to the chat
+  botProfit.sendMessage(chatId, 'Connected');
+});
+
+botError.onText(/\/start/, (msg, match) => {
+  // 'msg' is the received Message from Telegram
+  // 'match' is the result of executing the regexp above on the text content
+  // of the message
+
+  const chatId = msg.chat.id;
+  if (!botError_chatIDs.includes(chatId)) botError_chatIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
   botProfit.sendMessage(chatId, 'Connected');
