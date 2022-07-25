@@ -155,6 +155,7 @@ parentPort.on("message", async (signalString) => {
           }
         }
 
+        //Сохранение успешного открытия
         orders[signal.symbol] = {
           order: binanceMainLongResponse[0],
           sl: binanceLongResponse[0],
@@ -164,6 +165,7 @@ parentPort.on("message", async (signalString) => {
 
         console.log(orders[signal.symbol]);
 
+        //Отсылаем сигнал в телеграм
         parentPort.postMessage(JSON.stringify(signal));
 
         break;
@@ -179,6 +181,7 @@ parentPort.on("message", async (signalString) => {
           },
         ];
 
+        //Определение цены открытия позиции
         const binanceMainShortResponse = await binance.futuresMultipleOrders(
           mainShortOrder
         );
@@ -192,6 +195,7 @@ parentPort.on("message", async (signalString) => {
 
         binanceMainShortResponse[0].avgPrice = signal.open.price;
 
+        //Открытие позиции
         const newShortOrders = [
           {
             symbol: signal.symbol,
@@ -234,6 +238,37 @@ parentPort.on("message", async (signalString) => {
         );
         console.log(binanceShortResponse);
 
+        //Проверка ошибки при выставлении оредров
+        for(const binanceResponse of binanceShortResponse) {
+          if (!binanceResponse.orderId) {
+            logger.error(binanceShortResponse);
+            console.log('Canceling all orders due to one of the orders error!');
+
+            //Закрытие позиции
+            const mainLongCloseResponse = await binance.futuresMultipleOrders([
+              {
+                symbol: signal.symbol,
+                side: "BUY",
+                type: "MARKET",
+                quantity: String(mainAmount),
+                positionSide: "SHORT",
+              },
+            ]);
+
+            //Закрытие ордеров
+            for (let i = 0; i < binanceShortResponse.length; i++) {
+              const response = binanceShortResponse[i];
+              
+              const cancelResponse = await binance.futuresCancel(signal.symbol, {
+                orderId: response.orderId,
+              });
+            }
+
+            return;
+          }
+        }
+
+        //Сохранение успешного открытия
         orders[signal.symbol] = {
           order: binanceMainShortResponse[0],
           sl: binanceShortResponse[0],
@@ -242,6 +277,9 @@ parentPort.on("message", async (signalString) => {
         };
 
         console.log(orders[signal.symbol]);
+
+        //Отсылаем сигнал в телеграм
+        parentPort.postMessage(JSON.stringify(signal))
 
         break;
 
