@@ -22,7 +22,7 @@ const start = async () => {
     app.listen(PORT, () => console.log(`Server started on PORT = ${PORT}`));
     
     BinanceWorkerManager.createWorker(process.env.API, process.env.SECRET);
-    TelegramManager.createWorker(process.env.TOKEN_STEP, process.env.TOKEN_PROFIT);
+    TelegramManager.createWorker(process.env.TOKEN_STEP, process.env.TOKEN_PROFIT, process.env.TOKEN_ERROR);
   } catch (err) {
     console.log(err);
   }

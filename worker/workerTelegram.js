@@ -4,7 +4,7 @@ const { logger } = require("../logger");
 
 const botStep = new TelegramBot(workerData.tokenStep, { polling: true });
 const botProfit = new TelegramBot(workerData.tokenProfit, { polling: true });
-const botError = new TelegramBot(workerData.tokenProfit, { polling: true });
+const botError = new TelegramBot(workerData.tokenError, { polling: true });
 
 const botStep_chatIDs = [];
 const botProfit_chatIDs = [];
