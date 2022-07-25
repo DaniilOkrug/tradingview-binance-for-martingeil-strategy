@@ -23,14 +23,14 @@ parentPort.on("message", async (signalString) => {
   }
 
   if (signal.close_tp) {
-    for (const charId of botStep_chatIDs) {
+    for (const charId of botProfit_chatIDs) {
       botProfit.sendMessage(charId, `${signal.symbol} ${signal.close_tp}/2`);
     }
   }
 
   if (signal.error) {
-    for (const charId of botStep_chatIDs) {
-      botProfit.sendMessage(charId, signal);
+    for (const charId of botError_chatIDs) {
+      botProfit.sendMessage(charId, signalString);
     }
   }
 });
