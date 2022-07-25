@@ -134,14 +134,12 @@ parentPort.on("message", async (signalString) => {
             //Закрытие позиции
             const mainLongCloseResponse = await binance.futuresMultipleOrders([
               {
-                {
-                  symbol: signal.symbol,
-                  side: "SELL",
-                  type: "MARKET",
-                  quantity: String(mainAmount),
-                  positionSide: "LONG",
-                },
-              }
+                symbol: signal.symbol,
+                side: "SELL",
+                type: "MARKET",
+                quantity: String(mainAmount),
+                positionSide: "LONG",
+              },
             ]);
 
             //Закрытие ордеров
