@@ -2,6 +2,8 @@ const { parentPort, workerData } = require("worker_threads");
 const TelegramBot = require("node-telegram-bot-api");
 const { logger } = require("../logger");
 
+console.log(workerData);
+
 const botStep = new TelegramBot(workerData.tokenStep, { polling: true });
 const botProfit = new TelegramBot(workerData.tokenProfit, { polling: true });
 const botError = new TelegramBot(workerData.tokenError, { polling: true });
@@ -66,7 +68,7 @@ botError.onText(/\/start/, (msg, match) => {
   if (!botError_chatIDs.includes(chatId)) botError_chatIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
-  botProfit.sendMessage(chatId, 'Connected');
+  botError.sendMessage(chatId, 'Connected');
 });
 
 botStep.on("polling_error", (error) => {
