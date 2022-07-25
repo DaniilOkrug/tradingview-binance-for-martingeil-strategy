@@ -23,7 +23,6 @@ parentPort.on("message", async (signalString) => {
       botProfit.sendMessage(charId, `${signal.symbol} ${signal.close_tp}/2`);
     }
   }
-
 });
 
 botStep.onText(/\/start/, (msg, match) => {

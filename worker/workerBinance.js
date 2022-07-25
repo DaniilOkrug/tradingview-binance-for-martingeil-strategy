@@ -72,14 +72,17 @@ parentPort.on("message", async (signalString) => {
           mainLongOrder
         );
 
+        // Проверка ошибки выставления главного ордера
         if (!binanceMainLongResponse[0].orderId) {
           console.log(binanceMainLongResponse);
           logger.error(binanceMainLongResponse);
           return;
         }
 
+        //Определение цены открытия позиции
         binanceMainLongResponse[0].avgPrice = signal.open.price;
 
+        //Открытие позиции
         const newLongOrders = [
           {
             symbol: signal.symbol,
@@ -121,6 +124,38 @@ parentPort.on("message", async (signalString) => {
           newLongOrders
         );
         console.log(binanceLongResponse);
+        
+        //Проверка ошибки при выставлении оредров
+        for(const binanceResponse of binanceLongResponse) {
+          if (!binanceResponse.orderId) {
+            logger.error(binanceLongResponse);
+            console.log('Canceling all orders due to one of the orders error!');
+
+            //Закрытие позиции
+            const mainLongCloseResponse = await binance.futuresMultipleOrders([
+              {
+                {
+                  symbol: signal.symbol,
+                  side: "SELL",
+                  type: "MARKET",
+                  quantity: String(mainAmount),
+                  positionSide: "LONG",
+                },
+              }
+            ]);
+
+            //Закрытие ордеров
+            for (let i = 0; i < binanceLongResponse.length; i++) {
+              const response = binanceLongResponse[i];
+              
+              const cancelResponse = await binance.futuresCancel(signal.symbol, {
+                orderId: response.orderId,
+              });
+            }
+
+            return;
+          }
+        }
 
         orders[signal.symbol] = {
           order: binanceMainLongResponse[0],
@@ -150,6 +185,7 @@ parentPort.on("message", async (signalString) => {
           mainShortOrder
         );
 
+        // Проверка ошибки выставления главного ордера
         if (!binanceMainShortResponse[0].orderId) {
           console.log(binanceMainShortResponse);
           logger.error(binanceMainShortResponse);
