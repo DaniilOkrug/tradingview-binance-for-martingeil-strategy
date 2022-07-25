@@ -17,7 +17,7 @@ parentPort.on("message", async (signalString) => {
 
   if (signal.step) {
     for (const charId of botStep_chatIDs) {
-        botStep.sendMessage(charId, `${signal.symbol} ${signal.step}`);
+      botStep.sendMessage(charId, `${signal.symbol} ${signal.step}`);
     }
     return;
   }
@@ -30,7 +30,7 @@ parentPort.on("message", async (signalString) => {
 
   if (signal.error) {
     for (const charId of botError_chatIDs) {
-      botProfit.sendMessage(charId, signalString);
+      botError.sendMessage(charId, signalString);
     }
   }
 });
@@ -44,7 +44,7 @@ botStep.onText(/\/start/, (msg, match) => {
   if (!botStep_chatIDs.includes(chatId)) botStep_chatIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
-  botStep.sendMessage(chatId, 'Connected');
+  botStep.sendMessage(chatId, "Connected");
 });
 
 botProfit.onText(/\/start/, (msg, match) => {
@@ -56,7 +56,7 @@ botProfit.onText(/\/start/, (msg, match) => {
   if (!botProfit_chatIDs.includes(chatId)) botProfit_chatIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
-  botProfit.sendMessage(chatId, 'Connected');
+  botProfit.sendMessage(chatId, "Connected");
 });
 
 botError.onText(/\/start/, (msg, match) => {
@@ -68,7 +68,7 @@ botError.onText(/\/start/, (msg, match) => {
   if (!botError_chatIDs.includes(chatId)) botError_chatIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
-  botError.sendMessage(chatId, 'Connected');
+  botError.sendMessage(chatId, "Connected");
 });
 
 botStep.on("polling_error", (error) => {
