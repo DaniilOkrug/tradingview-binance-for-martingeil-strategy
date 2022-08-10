@@ -34,10 +34,6 @@ parentPort.on("message", async (signalString) => {
 
     console.log(signal);
     if (!signal.open || !signal.tp || !signal.sl) {
-      if (signal.close_tp) {
-        parentPort.postMessage(JSON.stringify(signal));
-      }
-
       console.log("Incorrect request");
       logger.error(`${signal.symbol} Incorrect request ${signal}`);
       return;
@@ -353,6 +349,15 @@ binance.websockets.userFutureData(
         ) {
           console.log("close all");
 
+          if (updateInfo?.order?.orderId === orders[pair]?.tp2?.orderId) {
+            parentPort.postMessage(
+              JSON.stringify({
+                symbol: updateInfo.order.symbol,
+                close_tp: 2,
+              })
+            );
+          }
+
           const cancelSlResponse = await binance.futuresCancel(pair, {
             orderId: orders[pair].sl.orderId,
           });
@@ -388,6 +393,14 @@ binance.websockets.userFutureData(
         ) {
           console.log("replace");
           logger.info(pair + " replace SL");
+
+          parentPort.postMessage(
+            JSON.stringify({
+              symbol: updateInfo.order.symbol,
+              close_tp: 1,
+            })
+          );
+
           const cancelOrderResponse = await binance.futuresCancel(pair, {
             orderId: orders[pair].sl.orderId,
           });
@@ -420,6 +433,14 @@ binance.websockets.userFutureData(
           updateInfo?.order?.orderStatus === "FILLED"
         ) {
           console.log("Cancel sl after 2 tp");
+
+          parentPort.postMessage(
+            JSON.stringify({
+              symbol: updateInfo.order.symbol,
+              close_tp: 2,
+            })
+          );
+
           const cancelOrderResponse = await binance.futuresCancel(pair, {
             orderId: orders[pair].sl.orderId,
           });
