@@ -7,10 +7,14 @@ console.log(workerData);
 const botStep = new TelegramBot(workerData.tokenStep, { polling: true });
 const botProfit = new TelegramBot(workerData.tokenProfit, { polling: true });
 const botError = new TelegramBot(workerData.tokenError, { polling: true });
+const botExtraAlert = new TelegramBot(workerData.tokenExtraAlert, {
+  polling: true,
+});
 
 const botStep_chatIDs = [];
 const botProfit_chatIDs = [];
 const botError_chatIDs = [];
+const botExtraAlert_chanIDs = [];
 
 parentPort.on("message", async (signalString) => {
   const signal = JSON.parse(signalString);
@@ -18,6 +22,12 @@ parentPort.on("message", async (signalString) => {
   if (signal.step) {
     for (const charId of botStep_chatIDs) {
       botStep.sendMessage(charId, `${signal.symbol} ${signal.step}`);
+    }
+
+    if (Number(signal.step) >= 15) {
+      for (const charId of botExtraAlert_chanIDs) {
+        botExtraAlert.sendMessage(charId, `!`);
+      }
     }
     return;
   }
@@ -66,6 +76,19 @@ botError.onText(/\/start/, (msg, match) => {
 
   const chatId = msg.chat.id;
   if (!botError_chatIDs.includes(chatId)) botError_chatIDs.push(chatId);
+
+  // send back the matched "whatever" to the chat
+  botError.sendMessage(chatId, "Connected");
+});
+
+botExtraAlert.onText(/\/start/, (msg, match) => {
+  // 'msg' is the received Message from Telegram
+  // 'match' is the result of executing the regexp above on the text content
+  // of the message
+
+  const chatId = msg.chat.id;
+  if (!botExtraAlert_chanIDs.includes(chatId))
+    botExtraAlert_chanIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
   botError.sendMessage(chatId, "Connected");

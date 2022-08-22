@@ -3,11 +3,11 @@ const { Worker } = require("worker_threads");
 class TelegramManager {
   #worker;
 
-  createWorker(tokenStep, tokenProfit, tokenError) {
+  createWorker(tokenStep, tokenProfit, tokenError, tokenExtraAlert) {
     return new Promise((resolve, reject) => {
       try {
         const worker = new Worker("./worker/workerTelegram.js", {
-          workerData: { tokenStep, tokenProfit, tokenError },
+          workerData: { tokenStep, tokenProfit, tokenError, tokenExtraAlert },
         });
 
         worker.on("message", async (data) => {
