@@ -91,7 +91,7 @@ botExtraAlert.onText(/\/start/, (msg, match) => {
     botExtraAlert_chanIDs.push(chatId);
 
   // send back the matched "whatever" to the chat
-  botError.sendMessage(chatId, "Connected");
+  botExtraAlert.sendMessage(chatId, "Connected");
 });
 
 botStep.on("polling_error", (error) => {
